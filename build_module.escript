@@ -2,7 +2,10 @@
 
 main([File, Output]) ->
     {ok, Words} = file:read_file(File),
+
+    io:format("Processing a total of ~p words...~n", [round(byte_size(Words)/5)]),
     put(cnt, 1),
+
     Graph = list_to_tuple([begin
         A = get(cnt),
         io:format("~p ", [A]),
@@ -10,16 +13,16 @@ main([File, Output]) ->
         find_nearest(Word, Words)
      end
         || <<Word:5/binary>> <= Words]),
+
     Index = dict:from_list(lists:zip(
         [W || <<W:5/binary>> <= Words],
         lists:seq(1, round(byte_size(Words) / 5))
     )),
-    
-    file:write_file(Output, term_to_binary({Index, Graph})),
-    ok.
+
+    file:write_file(Output, [io_lib:format("words_graph() ->~n~p.~nwords_index() ->~n~p.words() -> ~p.~n", [Graph, Index, Words])]).
 
 find_nearest(Word, Words) ->
-    find_nearest(Word, Words, [], 0).
+    find_nearest(Word, Words, [], 1).
 
 find_nearest(_Word, <<>>, Acc, _WordNum) ->
     Acc;

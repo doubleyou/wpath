@@ -1,0 +1,59 @@
+-module(wpath).
+
+-export([find/2]).
+-export([word/1]).
+
+word(N) ->
+    Offset = 5 * (N - 1),
+    <<_:Offset/binary, W:5/binary, _Rest/binary>> = words(),
+    W.
+
+find(StartWord, EndWord) ->
+    catch ets:delete(?MODULE),
+    ets:new(?MODULE, [public, named_table]),
+    SW = ensure_binary(StartWord),
+    EW = ensure_binary(EndWord),
+    Start = dict:fetch(SW, words_index()),
+    End = dict:fetch(EW, words_index()),
+
+    Numbers = lists:reverse([End | a_star(Start, End, [], self())]),
+    [word(N) || N <- Numbers].
+
+a_star(Start, End, Path, Parent) ->
+    ets:insert(?MODULE, {Start, []}),
+    Self = self(),
+    case Start =:= End of
+        true ->
+            Parent ! {path, Path};
+        false ->
+            NextSteps = next_steps(Start),
+            Children = [spawn(fun() -> a_star(Next, End, [Start | Path], Self) end) ||
+                Next <- NextSteps],
+            wait_for_results(Parent, Children, 0)
+    end.
+
+wait_for_results(Parent, Children, Counter) when Counter =:= length(Children) ->
+    Parent ! nothing;
+wait_for_results(Parent, Children, Counter) ->
+    receive
+        nothing ->
+            wait_for_results(Parent, Children, Counter + 1);
+        {path, Path} ->
+            Parent ! {path, Path},
+            [exit(Child, kill) || Child <- Children],
+            Path
+    end.
+
+
+next_steps(N) ->
+    lists:filter(
+        fun (I) ->
+            ets:lookup(?MODULE, I) == []
+        end,
+        element(N, words_graph())
+    ).
+
+ensure_binary(B) when is_binary(B) ->
+    B;
+ensure_binary(L) when is_list(L) ->
+    list_to_binary(L).
