@@ -11,3 +11,13 @@ basic_test() ->
         [<<"alack">>, <<"aback">>, <<"abaca">>],
         wpath_example:find(<<"alack">>, <<"abaca">>)
     ).
+
+basic2_test() ->
+    ?assertEqual(
+        [<<"black">>, <<"alack">>, <<"aback">>, <<"abaca">>],
+        wpath_example:find("black", "abaca")
+    ),
+    ?assertEqual(
+        [<<"abaca">>,<<"aback">>,<<"alack">>,<<"black">>],
+        wpath_example:find("abaca", "black")
+    ).

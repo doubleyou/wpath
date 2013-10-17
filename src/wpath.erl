@@ -1,33 +1,35 @@
 -module(wpath).
 
 -export([find/2]).
--export([word/1]).
 
-word(N) ->
-    Offset = 5 * (N - 1),
-    <<_:Offset/binary, W:5/binary, _Rest/binary>> = words(),
-    W.
+%%
+%% We expect functions words() words_index() and words_graph() to be added from
+%% the build_module.escript script.
+%%
 
 find(StartWord, EndWord) ->
-    catch ets:delete(?MODULE),
-    ets:new(?MODULE, [public, named_table]),
+    Tab = ets:new(?MODULE, [public]),
     SW = ensure_binary(StartWord),
     EW = ensure_binary(EndWord),
     Start = dict:fetch(SW, words_index()),
     End = dict:fetch(EW, words_index()),
 
-    Numbers = lists:reverse([End | a_star(Start, End, [], self())]),
-    [word(N) || N <- Numbers].
+    Numbers = lists:reverse([End | a_star(Start, End, [], self(), Tab)]),
+    R = [word(N) || N <- Numbers],
+    receive 
+        {path, _} -> ok
+    end,
+    R.
 
-a_star(Start, End, Path, Parent) ->
-    ets:insert(?MODULE, {Start, []}),
+a_star(Start, End, Path, Parent, Tab) ->
+    ets:insert(Tab, {Start, []}),
     Self = self(),
     case Start =:= End of
         true ->
             Parent ! {path, Path};
         false ->
-            NextSteps = next_steps(Start),
-            Children = [spawn(fun() -> a_star(Next, End, [Start | Path], Self) end) ||
+            NextSteps = next_steps(Start, Tab),
+            Children = [spawn(fun() -> a_star(Next, End, [Start | Path], Self, Tab) end) ||
                 Next <- NextSteps],
             wait_for_results(Parent, Children, 0)
     end.
@@ -45,13 +47,18 @@ wait_for_results(Parent, Children, Counter) ->
     end.
 
 
-next_steps(N) ->
+next_steps(N, Tab) ->
     lists:filter(
         fun (I) ->
-            ets:lookup(?MODULE, I) == []
+            ets:lookup(Tab, I) == []
         end,
         element(N, words_graph())
     ).
+
+word(N) ->
+    Offset = 5 * (N - 1),
+    <<_:Offset/binary, W:5/binary, _Rest/binary>> = words(),
+    W.
 
 ensure_binary(B) when is_binary(B) ->
     B;
