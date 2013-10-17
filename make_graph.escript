@@ -1,17 +1,21 @@
 #!/usr/bin/env escript
 
 main([File, Output]) ->
-    {ok, Bin} = file:read_file(File),
-    Words = binary:part(Bin, {0, byte_size(Bin) - 1}),
+    {ok, Words} = file:read_file(File),
     put(cnt, 1),
-    R = [begin
+    Graph = list_to_tuple([begin
         A = get(cnt),
         io:format("~p ", [A]),
         put(cnt, A+1),
         find_nearest(Word, Words)
      end
-        || <<Word:5/binary>> <= Words],
-    file:write_file(Output, term_to_binary(list_to_tuple(R))),
+        || <<Word:5/binary>> <= Words]),
+    Index = dict:from_list(lists:zip(
+        [W || <<W:5/binary>> <= Words],
+        lists:seq(1, round(byte_size(Words) / 5))
+    )),
+    
+    file:write_file(Output, term_to_binary({Index, Graph})),
     ok.
 
 find_nearest(Word, Words) ->
