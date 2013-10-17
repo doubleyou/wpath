@@ -16,7 +16,7 @@ The current wpath_example file is built from the priv/words.short dictionary and
 To build a full dictionary, use the build_module script (be careful, the complexity is O(N^2), where N is file size):
 
 ```
-./build_module.escrit priv/words.full && make
+./build_module.escript priv/words.full src/graph.erl.template && make
 ```
 
 To build a dictionary from your own source do the following (again, beware of complexity):
