@@ -30,3 +30,5 @@ Some notes:
 * Possible race conditions, since path searching is asynchronous. Can be solved by acquiring all the results first and picking the shortest one afterwards.
 
 * In theory, it's possible to run out of ETS tables
+
+* A module is built to avoid memory copying. Basically, module's shared heap is being abused here, so that large data structures are being reused from different processes with zero momory copying.
