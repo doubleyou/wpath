@@ -29,6 +29,4 @@ Some notes:
 
 * Possible race conditions, since path searching is asynchronous. Can be solved by acquiring all the results first and picking the shortest one afterwards.
 
-* A dumb tombstone with an additional receive instruction at the end of the find/2 function. Probably can be solved fairly quickly.
-
 * In theory, it's possible to run out of ETS tables

@@ -19,7 +19,7 @@ main([File, Output]) ->
         lists:seq(1, round(byte_size(Words) / 5))
     )),
 
-    file:write_file(Output, [io_lib:format("words_graph() ->~n~p.~nwords_index() ->~n~p.words() -> ~p.~n", [Graph, Index, Words])]).
+    file:write_file(Output, [io_lib:format("~nwords_graph() ->~n~n~p.~nwords_index() ->~n~p.~n~nwords() -> ~p.~n", [Graph, Index, Words])]).
 
 find_nearest(Word, Words) ->
     find_nearest(Word, Words, [], 1).

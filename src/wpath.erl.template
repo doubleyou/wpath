@@ -14,12 +14,16 @@ find(StartWord, EndWord) ->
     Start = dict:fetch(SW, words_index()),
     End = dict:fetch(EW, words_index()),
 
-    Numbers = lists:reverse([End | a_star(Start, End, [], self(), Tab)]),
-    R = [word(N) || N <- Numbers],
-    receive 
-        {path, _} -> ok
-    end,
-    R.
+    Self = self(),
+
+    spawn(fun () -> a_star(Start, End, [], Self, Tab) end),
+    receive
+        noting ->
+            nothing;
+        {path, Path} ->
+            Numbers = lists:reverse([End | Path]),
+            [word(N) || N <- Numbers]
+    end.
 
 a_star(Start, End, Path, Parent, Tab) ->
     ets:insert(Tab, {Start, []}),
